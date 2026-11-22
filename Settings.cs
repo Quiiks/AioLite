@@ -26,6 +26,8 @@ public sealed class Settings
     public bool Paused { get; set; }
     public bool ImportedLovingcool { get; set; }
     public string? Language { get; set; } // "fr" ou "en", null = langue de windows
+    public bool TakeoverAsked { get; set; }   // deja propose de virer lovingcool ?
+    public bool AutoStartDone { get; set; }   // demarrage auto active au 1er lancement
     public List<LibraryItem> Library { get; set; } = [];
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };

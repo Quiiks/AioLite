@@ -94,7 +94,8 @@ If you try it on something else, **please open an issue** and tell me if it work
 - a library with thumbnails, you can just drag & drop files in it
 - on first launch it grabs the videos from your Lovingcool themes so you don't have to re-add them
 - brightness, fit / fill mode, up to 60 fps (only if the video itself is 60 fps)
-- starts with Windows and stays in the tray
+- starts with Windows by itself (first launch) and stays in the tray
+- replaces the official app: it force closes LOVINGCOOL MONITOR if it's running and offers to uninstall it for you (your videos are copied first)
 - reconnects by itself if you unplug the screen or after sleep
 - the window is only created when you open it, so it doesn't use RAM when it's closed
 - english and french (uses your Windows language by default)
@@ -168,7 +169,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -o publish
 
 Then run `publish\AioLite.exe`.
 
-> ⚠️ **Close the official Lovingcool app first** (and disable its "open at login"), only one app can use the COM port at a time.
+> Only one app can use the screen's COM port at a time. Since v1.1.1 you don't have to do anything: AIO Lite closes the official Lovingcool app on startup and asks if you want to uninstall it (it also removes the hidden scheduled task that relaunches it at every boot). You can do it later from the tray icon menu → *Replace LOVINGCOOL MONITOR…*
 
 ## 🕹️ Usage
 
@@ -221,7 +222,7 @@ Maybe! It was only tested on the Lovingcool SC70 360. See [Compatibility](#-comp
 60 is a *max*. If your video is 30 fps there are only 30 frames per second to send.
 
 **The screen shows nothing?**
-Check that the official app is closed, and that your screen shows up as a COM port in Device Manager.
+Check that your screen shows up as a COM port in Device Manager. If the official app is still installed, use the tray icon menu → *Replace LOVINGCOOL MONITOR…* (it needs admin rights because the official app runs as admin).
 
 **Is it safe for my cooler?**
 It only uses the same commands the official app uses for live mode. No firmware stuff.

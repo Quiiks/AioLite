@@ -14,7 +14,7 @@ public sealed class App : ApplicationContext
 
     readonly NotifyIcon _tray;
     readonly SynchronizationContext _ui;
-    readonly ToolStripMenuItem _pauseItem, _openItem, _quitItem;
+    readonly ToolStripMenuItem _pauseItem, _openItem, _quitItem, _replaceItem;
     MainForm? _form;
     CancellationTokenSource? _prepCts;
     DeviceInfo? _lastInfo;
@@ -40,11 +40,15 @@ public sealed class App : ApplicationContext
         _pauseItem = new ToolStripMenuItem("", null, (_, _) => TogglePause());
         _openItem = new ToolStripMenuItem("", null, (_, _) => ShowWindow());
         _quitItem = new ToolStripMenuItem("", null, (_, _) => ExitThread());
+        _replaceItem = new ToolStripMenuItem("", null, (_, _) => _ = OfferTakeoverAsync(auto: false));
         var menu = new ContextMenuStrip { Renderer = new DarkMenuRenderer(), ShowImageMargin = false };
         menu.Items.Add(_openItem);
         menu.Items.Add(_pauseItem);
+        menu.Items.Add(_replaceItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_quitItem);
+        // l'option apparait seulement si l'ancienne app est encore installee
+        menu.Opening += (_, _) => _replaceItem.Visible = Takeover.IsInstalled;
         menu.ForeColor = Color.White;
 
         _tray = new NotifyIcon { Icon = AppIcon, Text = "AIO Lite", ContextMenuStrip = menu, Visible = startPlayer };
@@ -56,6 +60,21 @@ public sealed class App : ApplicationContext
 
         SystemEvents.PowerModeChanged += OnPower;
         UpdateMenuTexts();
+
+        if (startPlayer)
+        {
+            // l'ancienne app garde le port de l'ecran -> on la coupe direct
+            Takeover.RemoveUserAutostart();
+            Takeover.KillRunning();
+            // au 1er lancement on se met au demarrage de windows
+            if (!Settings.AutoStartDone)
+            {
+                AutoStart.Enabled = true;
+                Settings.AutoStartDone = true;
+                Settings.Save();
+            }
+            _ui.Post(_ => _ = OfferTakeoverAsync(auto: true), null);
+        }
         if (showWindow) ShowWindow();
     }
 
@@ -165,10 +184,45 @@ public sealed class App : ApplicationContext
 
     void UpdatePauseItem() => _pauseItem.Text = Settings.Paused ? L.T("Reprendre", "Resume") : "Pause";
 
+    // propose de desinstaller lovingcool (auto = au lancement, une seule fois)
+    async Task OfferTakeoverAsync(bool auto)
+    {
+        if (!Takeover.IsInstalled) return;
+        if (auto && Settings.TakeoverAsked) return;
+        Settings.TakeoverAsked = true;
+        Settings.Save();
+
+        var answer = MessageBox.Show(
+            L.T("Le logiciel LOVINGCOOL MONITOR est encore installé. Il utilise l'écran en même temps qu'AIO Lite et se relance à chaque démarrage.\n\n" +
+                "AIO Lite peut le remplacer : il copie tes vidéos, ferme l'ancien logiciel et le désinstalle.\n\nLe faire maintenant ?",
+                "LOVINGCOOL MONITOR is still installed. It uses the screen at the same time as AIO Lite and starts again at every boot.\n\n" +
+                "AIO Lite can replace it: it copies your videos, closes the old app and uninstalls it.\n\nDo it now?"),
+            "AIO Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1,
+            MessageBoxOptions.DefaultDesktopOnly);
+        if (answer != DialogResult.Yes) return;
+
+        Player.ReportPreparing(L.T("Remplacement de LOVINGCOOL MONITOR…", "Replacing LOVINGCOOL MONITOR…"));
+        StateChanged?.Invoke();
+        await Task.Run(() => Takeover.CopyLibraryVideos(Settings));
+        bool ok = await Takeover.UninstallAsync();
+
+        _tray.ShowBalloonTip(5000, "AIO Lite", ok
+            ? L.T("LOVINGCOOL MONITOR a été désinstallé. AIO Lite le remplace.", "LOVINGCOOL MONITOR was uninstalled. AIO Lite replaces it.")
+            : L.T("La désinstallation n'a pas été faite (refusée ou erreur). Tu peux réessayer depuis le menu de l'icône.",
+                  "Uninstall wasn't done (declined or error). You can retry from the tray icon menu."),
+            ok ? ToolTipIcon.Info : ToolTipIcon.Warning);
+
+        // les chemins des videos ont change -> on relance la video et on rafraichit la fenetre
+        if (_form != null && !_form.IsDisposed) { var b = _form.Bounds; var old = _form; _form = null; old.Close(); ShowWindow(); _form!.Bounds = b; }
+        _ = PrepareCurrentAsync();
+        StateChanged?.Invoke();
+    }
+
     void UpdateMenuTexts()
     {
         _openItem.Text = L.T("Ouvrir AIO Lite", "Open AIO Lite");
         _quitItem.Text = L.T("Quitter", "Quit");
+        _replaceItem.Text = L.T("Remplacer LOVINGCOOL MONITOR…", "Replace LOVINGCOOL MONITOR…");
         UpdatePauseItem();
     }
 

@@ -7,6 +7,12 @@ static class Program
     {
         if (args.Length >= 2 && args[0] == "--snap") { Snap(args[1], args.Length > 2 ? args[2] : null); return; }
         if (args.Length == 3 && args[0] == "--encode-test") { EncodeTest(args[1], args[2]); return; }
+        if (args.Length == 2 && args[0] == "--takeover-check")
+        {
+            // debug: est ce qu'on voit l'ancienne app ?
+            File.WriteAllText(args[1], $"installed={Takeover.IsInstalled} uninstaller={Takeover.FindUninstaller()} running={Takeover.AnyRunning}");
+            return;
+        }
 
         using var mutex = new Mutex(true, @"Local\AioLite.SingleInstance", out bool first);
         if (!first)
