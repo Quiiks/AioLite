@@ -58,7 +58,8 @@ public static class Encoder
     {
         var cache = CachePath(source, info, fill, maxFps, brightness);
         if (File.Exists(cache)) return cache;
-        if (FfmpegPath == null) throw new InvalidOperationException("ffmpeg introuvable. Installe-le : winget install Gyan.FFmpeg");
+        if (FfmpegPath == null) throw new InvalidOperationException(L.T("ffmpeg introuvable. Installe-le : winget install Gyan.FFmpeg",
+            "ffmpeg not found. Install it: winget install Gyan.FFmpeg"));
         Directory.CreateDirectory(CacheDir);
 
         var (srcFps, duration) = await ProbeAsync(source, ct);
@@ -115,7 +116,7 @@ public static class Encoder
                 }
             }
             await proc.WaitForExitAsync(ct);
-            if (frames == 0) throw new InvalidOperationException("Conversion échouée : " + (await errTask).Trim());
+            if (frames == 0) throw new InvalidOperationException(L.T("Conversion échouée : ", "Conversion failed: ") + (await errTask).Trim());
             File.Move(tmp, cache, true);
             progress?.Report(1);
             return cache;

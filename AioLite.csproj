@@ -12,6 +12,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <NoWarn>$(NoWarn);WFO1000</NoWarn>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

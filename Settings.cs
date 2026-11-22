@@ -25,6 +25,7 @@ public sealed class Settings
     public int MaxFps { get; set; } = 30;
     public bool Paused { get; set; }
     public bool ImportedLovingcool { get; set; }
+    public string? Language { get; set; } // "fr" ou "en", null = langue de windows
     public List<LibraryItem> Library { get; set; } = [];
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };

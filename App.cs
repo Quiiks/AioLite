@@ -14,7 +14,7 @@ public sealed class App : ApplicationContext
 
     readonly NotifyIcon _tray;
     readonly SynchronizationContext _ui;
-    readonly ToolStripMenuItem _pauseItem;
+    readonly ToolStripMenuItem _pauseItem, _openItem, _quitItem;
     MainForm? _form;
     CancellationTokenSource? _prepCts;
     DeviceInfo? _lastInfo;
@@ -31,17 +31,20 @@ public sealed class App : ApplicationContext
     {
         _ui = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
         Settings = Settings.Load();
+        L.Apply(Settings.Language);
         Settings.ImportLovingcoolThemes();
         if (startPlayer && AutoStart.Enabled) AutoStart.Enabled = true; // fix si l'exe a change de dossier
         if (Settings.Current == null && Settings.Library.Count > 0) Settings.Current = Settings.Library[0].Path;
         Settings.Save();
 
-        _pauseItem = new ToolStripMenuItem("Pause", null, (_, _) => TogglePause());
+        _pauseItem = new ToolStripMenuItem("", null, (_, _) => TogglePause());
+        _openItem = new ToolStripMenuItem("", null, (_, _) => ShowWindow());
+        _quitItem = new ToolStripMenuItem("", null, (_, _) => ExitThread());
         var menu = new ContextMenuStrip { Renderer = new DarkMenuRenderer(), ShowImageMargin = false };
-        menu.Items.Add("Ouvrir AIO Lite", null, (_, _) => ShowWindow());
+        menu.Items.Add(_openItem);
         menu.Items.Add(_pauseItem);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Quitter", null, (_, _) => ExitThread());
+        menu.Items.Add(_quitItem);
         menu.ForeColor = Color.White;
 
         _tray = new NotifyIcon { Icon = AppIcon, Text = "AIO Lite", ContextMenuStrip = menu, Visible = startPlayer };
@@ -52,7 +55,7 @@ public sealed class App : ApplicationContext
         Player.Changed += () => _ui.Post(_ => OnPlayerChanged(), null);
 
         SystemEvents.PowerModeChanged += OnPower;
-        UpdatePauseItem();
+        UpdateMenuTexts();
         if (showWindow) ShowWindow();
     }
 
@@ -75,13 +78,13 @@ public sealed class App : ApplicationContext
         var info = Player.Info;
         var src = Settings.Current;
         if (info == null || src == null) return;
-        if (!File.Exists(src)) { Player.ReportPreparing("Fichier introuvable : " + Path.GetFileName(src)); StateChanged?.Invoke(); return; }
+        if (!File.Exists(src)) { Player.ReportPreparing(L.T("Fichier introuvable : ", "File not found: ") + Path.GetFileName(src)); StateChanged?.Invoke(); return; }
 
         var cts = _prepCts = new CancellationTokenSource();
         var cache = Encoder.CachePath(src, info, Settings.Fill, Settings.MaxFps, Settings.Brightness);
         if (!File.Exists(cache))
         {
-            Player.ReportPreparing("Préparation de la vidéo (une seule fois)…");
+            Player.ReportPreparing(L.T("Préparation de la vidéo (une seule fois)…", "Preparing the video (only once)…"));
             PrepareProgress = 0;
             StateChanged?.Invoke();
         }
@@ -101,7 +104,7 @@ public sealed class App : ApplicationContext
         catch (Exception e)
         {
             PrepareProgress = -1;
-            Player.ReportPreparing("Erreur : " + e.Message);
+            Player.ReportPreparing(L.T("Erreur : ", "Error: ") + e.Message);
         }
         StateChanged?.Invoke();
     }
@@ -160,7 +163,35 @@ public sealed class App : ApplicationContext
         StateChanged?.Invoke();
     }
 
-    void UpdatePauseItem() => _pauseItem.Text = Settings.Paused ? "Reprendre" : "Pause";
+    void UpdatePauseItem() => _pauseItem.Text = Settings.Paused ? L.T("Reprendre", "Resume") : "Pause";
+
+    void UpdateMenuTexts()
+    {
+        _openItem.Text = L.T("Ouvrir AIO Lite", "Open AIO Lite");
+        _quitItem.Text = L.T("Quitter", "Quit");
+        UpdatePauseItem();
+    }
+
+    // change la langue et recree la fenetre (plus simple que de tout re-traduire a la main)
+    public void SetLanguage(string lang)
+    {
+        if (Settings.Language == lang) return;
+        Settings.Language = lang;
+        Settings.Save();
+        L.Apply(lang);
+        UpdateMenuTexts();
+        OnPlayerChanged();
+        if (_form != null && !_form.IsDisposed)
+        {
+            var bounds = _form.Bounds;
+            var old = _form;
+            _form = null;
+            old.Close();
+            ShowWindow();
+            _form!.StartPosition = FormStartPosition.Manual;
+            _form.Bounds = bounds;
+        }
+    }
 
     void OnPower(object? s, PowerModeChangedEventArgs e)
     {

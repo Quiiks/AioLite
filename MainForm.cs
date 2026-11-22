@@ -15,16 +15,18 @@ sealed class MainForm : Form
     readonly FlatButton _pause = new() { Width = 110, Primary = true };
     readonly ThinProgress _progress = new() { Visible = false };
     readonly Card _libCard = new();
-    readonly Label _libTitle = new() { Text = "Bibliothèque", Font = Theme.H2, ForeColor = Theme.Text, AutoSize = true, BackColor = Color.Transparent };
-    readonly Label _libHint = new() { Text = "Clique pour afficher · glisse des vidéos ici · clic droit pour retirer", Font = Theme.Small, ForeColor = Theme.Muted, AutoSize = true, BackColor = Color.Transparent };
-    readonly FlatButton _add = new() { Text = "+  Ajouter", Width = 110 };
+    readonly Label _libTitle = new() { Text = L.T("Bibliothèque", "Library"), Font = Theme.H2, ForeColor = Theme.Text, AutoSize = true, BackColor = Color.Transparent };
+    readonly Label _libHint = new() { Text = L.T("Clique pour afficher · glisse des vidéos ici · clic droit pour retirer", "Click to play · drop videos here · right click to remove"), Font = Theme.Small, ForeColor = Theme.Muted, AutoSize = true, BackColor = Color.Transparent };
+    readonly FlatButton _add = new() { Text = L.T("+  Ajouter", "+  Add"), Width = 110 };
     readonly FlowLayoutPanel _flow = new() { AutoScroll = true, BackColor = Theme.Panel, Padding = new Padding(0) };
     readonly Card _setCard = new();
-    readonly Label _lBright = Lbl("Luminosité"), _lFit = Lbl("Cadrage"), _lFps = Lbl("Fluidité max"), _lStart = Lbl("Lancer avec Windows");
+    readonly Label _lBright = Lbl(L.T("Luminosité", "Brightness")), _lFit = Lbl(L.T("Cadrage", "Framing")), _lFps = Lbl(L.T("Fluidité max", "Max framerate")),
+        _lStart = Lbl(L.T("Lancer avec Windows", "Start with Windows")), _lLang = Lbl(L.T("Langue", "Language"));
     readonly Label _brightVal = new() { Font = Theme.H2, ForeColor = Theme.Text, AutoSize = false, Width = 56, TextAlign = ContentAlignment.MiddleRight, BackColor = Color.Transparent };
     readonly Slider _bright = new();
-    readonly Segmented _fit = new() { Items = ["Ajuster", "Remplir"], Width = 200 };
-    readonly Segmented _fps = new() { Items = ["30 i/s", "60 i/s"], Width = 200 };
+    readonly Segmented _fit = new() { Items = [L.T("Ajuster", "Fit"), L.T("Remplir", "Fill")], Width = 200 };
+    readonly Segmented _fps = new() { Items = [L.T("30 i/s", "30 fps"), L.T("60 i/s", "60 fps")], Width = 200 };
+    readonly Segmented _lang = new() { Items = ["Français", "English"], Width = 200 };
     readonly Toggle _start = new();
     readonly Label _usage = new() { Font = Theme.Small, ForeColor = Theme.Muted, AutoSize = true, BackColor = Color.Transparent };
     readonly System.Windows.Forms.Timer _usageTimer = new() { Interval = 1000 };
@@ -47,9 +49,9 @@ sealed class MainForm : Form
         DoubleBuffered = true;
         AllowDrop = true;
 
-        Controls.AddRange([_title, _device, _status, _pause, _progress, _libCard, _setCard]);
+        Controls.AddRange([_title, _device, _status, _pause, _usage, _progress, _libCard, _setCard]);
         _libCard.Controls.AddRange([_libTitle, _libHint, _add, _flow]);
-        _setCard.Controls.AddRange([_lBright, _bright, _brightVal, _lFit, _fit, _lFps, _fps, _lStart, _start, _usage]);
+        _setCard.Controls.AddRange([_lBright, _bright, _brightVal, _lFit, _fit, _lFps, _fps, _lStart, _start, _lLang, _lang]);
 
         _bright.Value = app.Settings.Brightness;
         _brightVal.Text = _bright.Value + " %";
@@ -62,6 +64,9 @@ sealed class MainForm : Form
         _fps.Changed += (_, _) => _app.SetMaxFps(_fps.Selected == 1 ? 60 : 30);
         _start.On = AutoStart.Enabled;
         _start.Changed += (_, _) => AutoStart.Enabled = _start.On;
+        _lang.Selected = L.En ? 1 : 0;
+        // BeginInvoke parce que la fenetre se ferme pendant le click sinon
+        _lang.Changed += (_, _) => BeginInvoke(() => _app.SetLanguage(_lang.Selected == 1 ? "en" : "fr"));
         _pause.Click += (_, _) => _app.TogglePause();
         _add.Click += (_, _) => AddViaDialog();
 
@@ -101,6 +106,7 @@ sealed class MainForm : Form
         _device.Location = new Point(m + 4, 54);
         _pause.Location = new Point(W - m - _pause.Width, 24);
         _status.Location = new Point(_pause.Left - 12 - _status.Width, 24);
+        _usage.Location = new Point(W - m - _usage.PreferredWidth, 62);
         _progress.SetBounds(m, 82, W - 2 * m, 4);
 
         int setH = 168;
@@ -126,7 +132,8 @@ sealed class MainForm : Form
         _fps.Location = new Point(sw - 22 - _fps.Width, 72);
         _lStart.Location = new Point(22, 124);
         _start.Location = new Point(160, 122);
-        _usage.Location = new Point(sw - 22 - _usage.PreferredWidth, 126);
+        _lLang.Location = new Point(col + 10, 124);
+        _lang.Location = new Point(sw - 22 - _lang.Width, 118);
     }
 
     // resize les vignettes pour que ca rentre (sinon y'avait une scrollbar horizontale)
@@ -182,10 +189,10 @@ sealed class MainForm : Form
     void ShowTileMenu(VideoTile tile, Point p)
     {
         var menu = new ContextMenuStrip { Renderer = new DarkMenuRenderer(), ShowImageMargin = false };
-        menu.Items.Add("Afficher", null, (_, _) => Select(tile.Item));
-        menu.Items.Add("Ouvrir l'emplacement", null, (_, _) =>
+        menu.Items.Add(L.T("Afficher", "Play"), null, (_, _) => Select(tile.Item));
+        menu.Items.Add(L.T("Ouvrir l'emplacement", "Open file location"), null, (_, _) =>
             Process.Start("explorer.exe", $"/select,\"{tile.Item.Path}\""));
-        menu.Items.Add("Retirer de la liste", null, (_, _) =>
+        menu.Items.Add(L.T("Retirer de la liste", "Remove from list"), null, (_, _) =>
         {
             _app.Settings.Library.Remove(tile.Item);
             _app.Settings.Save();
@@ -206,9 +213,10 @@ sealed class MainForm : Form
     {
         using var dlg = new OpenFileDialog
         {
-            Title = "Ajouter des vidéos",
+            Title = L.T("Ajouter des vidéos", "Add videos"),
             Multiselect = true,
-            Filter = "Vidéos et images|" + string.Join(";", VideoExts.Select(x => "*" + x)) + "|Tous les fichiers|*.*",
+            Filter = L.T("Vidéos et images|", "Videos and images|") + string.Join(";", VideoExts.Select(x => "*" + x))
+                     + L.T("|Tous les fichiers|*.*", "|All files|*.*"),
         };
         if (dlg.ShowDialog(this) == DialogResult.OK) AddFiles(dlg.FileNames);
     }
@@ -235,10 +243,11 @@ sealed class MainForm : Form
         var p = _app.Player;
         var info = p.Info;
         _device.Text = info == null
-            ? "Aucun écran connecté"
+            ? L.T("Aucun écran connecté", "No screen connected")
             : $"{info.Model}  ·  {info.Width}×{info.Height}  ·  firmware {info.Version}";
+        var fpsUnit = L.T("i/s", "fps");
         _status.Text = p.StatusText + (p.State == PlayerState.Playing
-            ? (p.Fps > 0 ? $"  ·  {p.Fps:0} / {p.SourceFps:0.##} i/s" : $"  ·  {p.SourceFps:0.##} i/s")
+            ? (p.Fps > 0 ? $"  ·  {p.Fps:0} / {p.SourceFps:0.##} {fpsUnit}" : $"  ·  {p.SourceFps:0.##} {fpsUnit}")
             : "");
         _status.Dot = p.State switch
         {
@@ -248,12 +257,12 @@ sealed class MainForm : Form
             _ => Theme.Muted,
         };
         _status.Invalidate();
-        _pause.Text = _app.Settings.Paused ? "▶  Reprendre" : "❚❚  Pause";
+        _pause.Text = _app.Settings.Paused ? L.T("▶  Reprendre", "▶  Resume") : "❚❚  Pause";
         _progress.Visible = _app.PrepareProgress >= 0;
         if (_app.PrepareProgress >= 0)
         {
             _progress.Value = _app.PrepareProgress;
-            _status.Text = $"Préparation… {_app.PrepareProgress:P0} (une seule fois)";
+            _status.Text = L.T($"Préparation… {_app.PrepareProgress:P0} (une seule fois)", $"Preparing… {_app.PrepareProgress:P0} (only once)");
         }
     }
 
@@ -269,8 +278,8 @@ sealed class MainForm : Form
             cpuTxt = $"CPU {pct:0.0} %   ·   ";
         }
         _lastCpu = cpu; _lastTick = now;
-        _usage.Text = $"{cpuTxt}RAM {proc.PrivateMemorySize64 / 1048576.0:0} Mo";
-        _usage.Left = _setCard.Width - 22 - _usage.PreferredWidth;
+        _usage.Text = $"{cpuTxt}RAM {proc.PrivateMemorySize64 / 1048576.0:0} {L.T("Mo", "MB")}";
+        _usage.Left = ClientSize.Width - 24 - _usage.PreferredWidth;
     }
 
     static bool PathEq(string? a, string? b) => a != null && b != null && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);

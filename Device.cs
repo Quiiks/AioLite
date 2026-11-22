@@ -95,7 +95,7 @@ public sealed class Device : IDisposable
             catch (JsonException) { /* pas tout recu encore */ }
             catch (KeyNotFoundException) { }
         }
-        throw new IOException("L'écran ne répond pas à la demande d'infos.");
+        throw new IOException(L.T("L'écran ne répond pas à la demande d'infos.", "The screen didn't answer the info request."));
     }
 
     // live mode, faut le renvoyer genre toutes les 1.5s sinon l'ecran lache

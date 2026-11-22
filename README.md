@@ -85,6 +85,7 @@ If you try it on something else, **please open an issue** and tell me if it work
 - 🚀 Start with Windows, lives in the system tray
 - 🔌 Auto reconnect if you unplug the screen or wake up from sleep
 - 🌙 Dark UI that only exists while it's open (closing it frees the memory)
+- 🌍 English / French (picks your Windows language by default, you can switch in the settings)
 
 ## 🧠 How it works
 
@@ -131,9 +132,9 @@ On the 6.67" screen (native 2400×1080, mounted at 90°) the frames are sent as 
 
 1. Grab `AioLite-win-x64.zip` from the [latest release](../../releases/latest)
 2. Unzip it wherever you want (I use `%LOCALAPPDATA%\Programs\AioLite`)
-3. Run `AioLite.exe`, it goes in the system tray. Turn on "Lancer avec Windows" in the settings if you want it at startup
+3. Run `AioLite.exe`, it goes in the system tray. Turn on "Start with Windows" in the settings if you want it at startup
 
-> The UI is in French for now (I'm French 🥖), English UI is on the roadmap.
+> The UI is in English or French 🥖 (it follows your Windows language, you can change it in the settings).
 
 ### Requirements
 
@@ -195,7 +196,7 @@ AioLite/
 - [ ] Playlist / shuffle mode
 - [ ] Support other screens from the same family (other PIDs from `VID 33C3`)
 - [ ] Self-contained release so you don't need the .NET runtime
-- [ ] English UI (right now it's French only)
+- [x] English UI (added in v1.1)
 
 PRs and issues are welcome! If you have another AIO with a screen and want to test, open an issue with the JSON your screen returns for `0x06`.
 

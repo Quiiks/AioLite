@@ -5,7 +5,7 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
-        if (args.Length == 2 && args[0] == "--snap") { Snap(args[1]); return; }
+        if (args.Length >= 2 && args[0] == "--snap") { Snap(args[1], args.Length > 2 ? args[2] : null); return; }
         if (args.Length == 3 && args[0] == "--encode-test") { EncodeTest(args[1], args[2]); return; }
 
         using var mutex = new Mutex(true, @"Local\AioLite.SingleInstance", out bool first);
@@ -52,11 +52,12 @@ static class Program
     }
 
     // debug: screenshot de la fenetre dans un png
-    static void Snap(string file)
+    static void Snap(string file, string? lang)
     {
         ApplicationConfiguration.Initialize();
         SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
         var app = new App(showWindow: false, startPlayer: false);
+        if (lang != null) L.Apply(lang); // juste pour la capture, on sauvegarde pas
         var f = new MainForm(app) { StartPosition = FormStartPosition.Manual, Location = new Point(-3000, 0), ShowInTaskbar = false };
         f.Show();
         var until = Environment.TickCount64 + 2500;

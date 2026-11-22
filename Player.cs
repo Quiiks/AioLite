@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace AioLite;
 
-public enum PlayerState { Searching, Preparing, Playing, Paused, Error }
+public enum PlayerState { Searching, NoScreen, NoVideo, Preparing, Playing, Paused, Error }
 
 // player thread: lit le fichier .aio et envoie les frames sur le port com
 // no decoding here, juste read + write + wait, c'est pour ca que ca prend 0% cpu
@@ -18,7 +18,18 @@ public sealed class Player : IDisposable
 
     public DeviceInfo? Info { get; private set; }
     public PlayerState State { get; private set; } = PlayerState.Searching;
-    public string StatusText { get; private set; } = "Recherche de l'écran…";
+    string _detail = "";
+
+    // le texte est calcule a chaque fois comme ca il change direct quand on change la langue
+    public string StatusText => State switch
+    {
+        PlayerState.NoScreen => L.T("Écran non détecté", "Screen not detected"),
+        PlayerState.NoVideo => L.T("Aucune vidéo choisie", "No video selected"),
+        PlayerState.Playing => L.T("Lecture", "Playing") + " — " + _detail,
+        PlayerState.Paused => L.T("En pause", "Paused"),
+        PlayerState.Preparing or PlayerState.Error => _detail,
+        _ => L.T("Recherche de l'écran…", "Looking for the screen…"),
+    };
     public double Fps { get; private set; }
 
     // fired from the player thread (attention pas le thread UI)
@@ -39,10 +50,10 @@ public sealed class Player : IDisposable
     public void SetBrightness(int v) { _brightness = v; _wake.Set(); }
     public void SetPaused(bool p) { _paused = p; _wake.Set(); }
 
-    void Set(PlayerState s, string text)
+    void Set(PlayerState s, string detail = "")
     {
-        if (State == s && StatusText == text) return;
-        State = s; StatusText = text;
+        if (State == s && _detail == detail) return;
+        State = s; _detail = detail;
         Changed?.Invoke();
     }
 
@@ -54,7 +65,7 @@ public sealed class Player : IDisposable
         while (!_quit)
         {
             var portName = Device.FindPort();
-            if (portName == null) { Set(PlayerState.Searching, "Écran non détecté"); _wake.WaitOne(3000); continue; }
+            if (portName == null) { Set(PlayerState.NoScreen); _wake.WaitOne(3000); continue; }
 
             Device dev;
             try { dev = Device.Connect(portName); }
@@ -63,7 +74,7 @@ public sealed class Player : IDisposable
             Info = dev.Info;
             Changed?.Invoke();
             try { PlayLoop(dev, timer); }
-            catch (Exception e) when (!_quit) { Set(PlayerState.Error, "Connexion perdue : " + e.Message); }
+            catch (Exception e) when (!_quit) { Set(PlayerState.Error, L.T("Connexion perdue : ", "Connection lost: ") + e.Message); }
             finally
             {
                 try { dev.Stop(); } catch { }
@@ -83,8 +94,8 @@ public sealed class Player : IDisposable
             if (_paused || clip == null || !File.Exists(clip))
             {
                 if (live) { dev.Stop(); live = false; }
-                if (_paused) Set(PlayerState.Paused, "En pause");
-                else if (State != PlayerState.Preparing) Set(PlayerState.Searching, "Aucune vidéo choisie");
+                if (_paused) Set(PlayerState.Paused);
+                else if (State != PlayerState.Preparing) Set(PlayerState.NoVideo);
                 _wake.WaitOne(1500);
                 ApplyBrightness(dev);
                 dev.DrainInput();
@@ -103,7 +114,7 @@ public sealed class Player : IDisposable
 
             dev.StartLive(); live = true;
             ApplyBrightness(dev, force: true);
-            Set(PlayerState.Playing, $"Lecture — {_name}");
+            Set(PlayerState.Playing, _name);
 
             long nextKeepAlive = Environment.TickCount64 + 1500;
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -116,7 +127,7 @@ public sealed class Player : IDisposable
                 // next frame, si fin du fichier on recommence (loop)
                 if (fs.Read(buf, 0, 4) < 4) { fs.Position = 8; continue; }
                 int len = BitConverter.ToInt32(buf, 0);
-                if (len <= 0 || len + 6 > buf.Length) throw new InvalidDataException("cache corrompu");
+                if (len <= 0 || len + 6 > buf.Length) throw new InvalidDataException(L.T("cache corrompu", "corrupted cache"));
                 fs.ReadExactly(buf, 4, len + 2);
 
                 dev.SendPacket(buf.AsSpan(0, len + 6));
