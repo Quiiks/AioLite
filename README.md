@@ -88,18 +88,16 @@ If you try it on something else, **please open an issue** and tell me if it work
 
 > Use it at your own risk. It only sends the same "live mode" commands as the official app and never touches the firmware, but I can't promise anything for a cooler I don't have.
 
-## ✨ Features
+## Features
 
-- 🎬 Play any video / GIF / image on the AIO screen (mp4, mkv, mov, webm, gif, png, jpg...)
-- 📚 Library with thumbnails, drag & drop files to add them
-- 📥 Imports your existing Lovingcool themes automatically on first launch
-- 🔆 Brightness slider
-- 🖼️ Fit or Fill (crop) mode
-- ⚡ Up to 60 fps (if your video is 60 fps)
-- 🚀 Start with Windows, lives in the system tray
-- 🔌 Auto reconnect if you unplug the screen or wake up from sleep
-- 🌙 Dark UI that only exists while it's open (closing it frees the memory)
-- 🌍 English / French (picks your Windows language by default, you can switch in the settings)
+- plays videos, gifs and images on the screen (mp4, mkv, mov, webm, gif, png, jpg...)
+- a library with thumbnails, you can just drag & drop files in it
+- on first launch it grabs the videos from your Lovingcool themes so you don't have to re-add them
+- brightness, fit / fill mode, up to 60 fps (only if the video itself is 60 fps)
+- starts with Windows and stays in the tray
+- reconnects by itself if you unplug the screen or after sleep
+- the window is only created when you open it, so it doesn't use RAM when it's closed
+- english and french (uses your Windows language by default)
 
 ## 🧠 How it works
 
