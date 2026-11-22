@@ -1,0 +1,21 @@
+# build output
+bin/
+obj/
+publish/
+snapbin/
+
+# my test stuff
+test/
+
+# visual studio / rider / vscode
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# misc
+*.log
+*.aio
+Thumbs.db
+desktop.ini
