@@ -38,7 +38,7 @@ So I made my own. It does one thing: put your video on the screen, and stay out 
 | RAM in background | 300+ MB | **~20 MB** |
 | Install size | ~400 MB | **~500 KB** |
 
-*(measured on my PC, 16 threads, window closed)*
+*(measured on my PC, Ryzen 7 5800X / 16 threads, window closed, see [my setup](#my-pc))*
 
 ## 🧩 Compatibility
 
@@ -51,7 +51,21 @@ So I made my own. It does one thing: put your video on the screen, and stay out 
 | Model reported by the screen | `D215-NOR-JD9365-6.67inch-hor` |
 | Firmware | `4.0` |
 | USB ID | `VID 33C3` / `PID 7791` (shows up as a COM port) |
-| OS | Windows 11 |
+| OS | Windows 11 Pro (build 26300) |
+
+### My PC
+
+The rest of the setup I tested on, so you can compare the CPU / RAM numbers with yours:
+
+| | |
+|---|---|
+| CPU | AMD Ryzen 7 5800X (8 cores / 16 threads) |
+| GPU | NVIDIA GeForce RTX 3060 Ti |
+| RAM | 40 GB DDR4 @ 2666 MT/s (4 sticks) |
+| Motherboard | MSI MPG B550 GAMING EDGE WIFI |
+| OS | Windows 11 Pro, build 26300 |
+| .NET | Windows Desktop Runtime 10.0.1 |
+| ffmpeg | 8.0.1 (gyan.dev full build, installed with winget) |
 
 Everything in this README (the protocol, the frame size, the perf numbers...) comes from this one setup.
 
