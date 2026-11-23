@@ -34,6 +34,7 @@ public sealed class App : ApplicationContext
         L.Apply(Settings.Language);
         Settings.ImportLovingcoolThemes();
         if (startPlayer && AutoStart.Enabled) AutoStart.Enabled = true; // fix si l'exe a change de dossier
+        if (startPlayer) Log.Write($"start v{Application.ProductVersion} | video={Path.GetFileName(Settings.Current)} | autostart={AutoStart.Enabled} | exe={Environment.ProcessPath}");
         if (Settings.Current == null && Settings.Library.Count > 0) Settings.Current = Settings.Library[0].Path;
         Settings.Save();
 
@@ -66,12 +67,12 @@ public sealed class App : ApplicationContext
             // l'ancienne app garde le port de l'ecran -> on la coupe direct
             Takeover.RemoveUserAutostart();
             Takeover.KillRunning();
-            // au 1er lancement on se met au demarrage de windows
-            if (!Settings.AutoStartDone)
+            // on se (re)met au demarrage de windows si l'utilisateur le veut et que l'entree a saute
+            if (!Settings.AutoStartDone) { Settings.WantAutoStart = true; Settings.AutoStartDone = true; Settings.Save(); }
+            if (Settings.WantAutoStart && !AutoStart.Enabled)
             {
                 AutoStart.Enabled = true;
-                Settings.AutoStartDone = true;
-                Settings.Save();
+                Log.Write("autostart re-active: " + AutoStart.Enabled);
             }
             _ui.Post(_ => _ = OfferTakeoverAsync(auto: true), null);
         }
@@ -148,6 +149,7 @@ public sealed class App : ApplicationContext
     {
         Settings.Current = path;
         Settings.Save();
+        Log.Write("video choisie: " + Path.GetFileName(path));
         _ = PrepareCurrentAsync();
     }
 

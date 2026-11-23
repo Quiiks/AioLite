@@ -143,6 +143,16 @@ On the 6.67" screen (native 2400×1080, mounted at 90°) the frames are sent as 
 
 ### Download
 
+**One line install / update** (paste it in PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/Quiiks/AioLite/main/install.ps1 | iex
+```
+
+It downloads the latest release into `%LOCALAPPDATA%\Programs\AioLite` and starts it (it adds itself to Windows startup on first launch).
+
+Or by hand:
+
 1. Grab `AioLite-win-x64.zip` from the [latest release](../../releases/latest)
 2. Unzip it wherever you want (I use `%LOCALAPPDATA%\Programs\AioLite`)
 3. Run `AioLite.exe`, it goes in the system tray. Turn on "Start with Windows" in the settings if you want it at startup

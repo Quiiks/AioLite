@@ -63,7 +63,12 @@ sealed class MainForm : Form
         _fps.Selected = app.Settings.MaxFps >= 60 ? 1 : 0;
         _fps.Changed += (_, _) => _app.SetMaxFps(_fps.Selected == 1 ? 60 : 30);
         _start.On = AutoStart.Enabled;
-        _start.Changed += (_, _) => AutoStart.Enabled = _start.On;
+        _start.Changed += (_, _) =>
+        {
+            AutoStart.Enabled = _start.On;
+            _app.Settings.WantAutoStart = _start.On;
+            _app.Settings.Save();
+        };
         _lang.Selected = L.En ? 1 : 0;
         // BeginInvoke parce que la fenetre se ferme pendant le click sinon
         _lang.Changed += (_, _) => BeginInvoke(() => _app.SetLanguage(_lang.Selected == 1 ? "en" : "fr"));
