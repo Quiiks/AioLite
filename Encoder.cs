@@ -48,7 +48,7 @@ public static class Encoder
     {
         var fi = new FileInfo(source);
         var (w, h, rot) = Geometry(info);
-        var key = $"{fi.FullName}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}|{w}x{h}{rot}|{fill}|{maxFps}|b{brightness}|q3";
+        var key = $"{fi.FullName}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}|{w}x{h}{rot}|{fill}|{maxFps}|b{brightness}|q3std";
         var hash = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(key)))[..16];
         return Path.Combine(CacheDir, hash + ".aio");
     }
@@ -81,7 +81,11 @@ public static class Encoder
         {
             RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true,
         };
-        foreach (var a in new[] { "-v", "error", "-i", source, "-an", "-sn", "-dn", "-vf", vf, "-q:v", "3", "-f", "mjpeg", "pipe:1" })
+        // -huffman default = tables standard du jpeg (comme chrome / l'app d'origine)
+        // les tables "optimal" de ffmpeg font planter le decodeur de l'ecran de temps en temps
+        // -bitexact = pas de commentaire "Lavc" dans chaque image
+        foreach (var a in new[] { "-v", "error", "-i", source, "-an", "-sn", "-dn", "-vf", vf, "-q:v", "3",
+                     "-huffman", "default", "-flags", "+bitexact", "-fflags", "+bitexact", "-f", "mjpeg", "pipe:1" })
             psi.ArgumentList.Add(a);
 
         var tmp = cache + ".tmp";

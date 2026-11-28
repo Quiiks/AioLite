@@ -68,6 +68,7 @@ public sealed class Device : IDisposable
             Thread.Sleep(200);
             d._port.DiscardInBuffer();
             d.Info = d.ReadInfo();
+            d.AfterConnect();
             return d;
         }
         catch { d.Dispose(); throw; }
@@ -102,6 +103,20 @@ public sealed class Device : IDisposable
             catch (KeyNotFoundException) { }
         }
         throw new IOException(L.T("L'écran ne répond pas à la demande d'infos.", "The screen didn't answer the info request."));
+    }
+
+    // ce que l'app d'origine envoie juste apres la connexion (afterConnect)
+    // 0x15 [0, 10] = "setMotionTimeout", seulement si firmware >= 2.8
+    // sans ca l'ecran garde son reglage par defaut et se reset tout seul de temps en temps (je pense)
+    void AfterConnect()
+    {
+        if (!double.TryParse(Info.Version, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) || v < 2.8) return;
+        Command(0x15, 0x00, 0x0A);
+        // l'app d'origine attend la reponse, on lui laisse le temps de repondre puis on vide
+        var deadline = Environment.TickCount64 + 1500;
+        while (Environment.TickCount64 < deadline && _port.BytesToRead == 0) Thread.Sleep(20);
+        Thread.Sleep(50);
+        DrainInput();
     }
 
     // live mode, faut le renvoyer genre toutes les 1.5s sinon l'ecran lache
