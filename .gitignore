@@ -2,7 +2,7 @@
 bin/
 obj/
 publish/
-snapbin/
+snapbin*/
 
 # my test stuff
 test/
