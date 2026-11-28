@@ -27,7 +27,13 @@ public sealed class Device : IDisposable
     Device(string portName)
     {
         PortName = portName;
-        _port = new SerialPort(portName, 2_000_000) { ReadTimeout = 500, WriteTimeout = 5000, ReadBufferSize = 4096 };
+        // DTR/RTS a 1 comme le logiciel d'origine (node serialport), sinon l'ecran croit
+        // que le pc est parti et finit par se reset tout seul
+        _port = new SerialPort(portName, 2_000_000)
+        {
+            ReadTimeout = 500, WriteTimeout = 5000, ReadBufferSize = 4096,
+            DtrEnable = true, RtsEnable = true,
+        };
         _port.Open();
         _stream = _port.BaseStream;
     }

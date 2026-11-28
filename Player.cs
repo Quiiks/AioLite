@@ -72,9 +72,14 @@ public sealed class Player : IDisposable
             catch (Exception e) { Set(PlayerState.Error, $"{portName} : {e.Message}"); _wake.WaitOne(3000); continue; }
 
             Info = dev.Info;
+            Log.Write($"ecran connecte sur {portName} ({dev.Info.Model}, fw {dev.Info.Version})");
             Changed?.Invoke();
             try { PlayLoop(dev, timer); }
-            catch (Exception e) when (!_quit) { Set(PlayerState.Error, L.T("Connexion perdue : ", "Connection lost: ") + e.Message); }
+            catch (Exception e) when (!_quit)
+            {
+                Log.Write("ecran perdu: " + e.Message);
+                Set(PlayerState.Error, L.T("Connexion perdue : ", "Connection lost: ") + e.Message);
+            }
             finally
             {
                 try { dev.Stop(); } catch { }
